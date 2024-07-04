@@ -1,42 +1,48 @@
-import 'package:eventsphere/SocietyDetail.dart';
+import 'package:eventsphere/EventDetail.dart';
 import 'package:eventsphere/model.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class ExploreCommunities extends StatefulWidget {
-  const ExploreCommunities({super.key});
-
+class ExploreEvents extends StatefulWidget {
+  const ExploreEvents({super.key});
   @override
-  State<ExploreCommunities> createState() => _ExploreCommunitiesState();
+  State<ExploreEvents> createState() => _ExploreEventsState();
 }
 
-class _ExploreCommunitiesState extends State<ExploreCommunities> {
-  List<Society> societies = [];
+class _ExploreEventsState extends State<ExploreEvents> {
+  int? societyID;
+  List<Event> events = [];
   bool isload = true;
   Future<void> fetchData() async {
     final response = await http
-        .get(Uri.parse('http://EventSphere.somee.com/Society/GetAllSociety'));
+        .get(Uri.parse('http://EventSphere.somee.com/Society/GetEventsofSociety?ID=${societyID}'));
     if (response.statusCode == 200) {
       var values = json.decode(response.body);
       for (int i = 0; i < values.length; i++) {
-        Society society = Society();
-        society.ID = values[i]["ID"] ?? 0;
-        society.SocietyName = values[i]["SocietyName"] ?? "";
-        society.ImageURL = values[i]["SocietyIcon"] ?? "";
-        // Order order = Order();
-        // order.ID = values[i]["ID"] ?? 0;
-        // order.Name = values[i]["CustomerName"] ?? "";
-        // order.Number = values[i]["Number"] ?? "";
-        // order.CityName = values[i]["CityName"] ?? "";
-        // order.Address = values[i]["Address"] ?? "";
-        // order.Product = values[i]["Product"] ?? "";
-        // order.Amount = values[i]["Amount"] ?? "";
-        // order.Status = values[i]["Status"] ?? "";
-        // order.TrackingID = values[i]["TrackingID"] ?? "";
+        Event event = Event();
+        event.ID = values[i]["ID"] ?? 0;
+        event.EventName = values[i]["EventName"] ?? "";
+        String rawDate = values[i]["EventDateandTime"] ?? "";
+        try {
+          // Extract the number from the /Date(1721840400000)/ format
+          final timestamp =
+              int.parse(rawDate.replaceAll(RegExp(r'[^0-9]'), ''));
+          // Convert the timestamp to a DateTime object in UTC
+          DateTime utcDate =
+              DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
+          // Convert the UTC time to local time
+          event.EventDateandTime = utcDate.toLocal();
+        } catch (e) {
+          print("Error parsing date: $e");
+        }
 
-        // orders.add(order);
-        societies.add(society);
+        event.EventVenue = values[i]["EventVenue"] ?? "";
+        event.EventCity = values[i]["EventCity"] ?? "";
+        event.SocietyID = values[i]["SocietyID"] ?? 0;
+        event.EventIcon = values[i]["EventIcon"] ?? "";
+
+        events.add(event);
       }
       // userid = values["userid"];
 
@@ -48,13 +54,17 @@ class _ExploreCommunitiesState extends State<ExploreCommunities> {
 
   @override
   void initState() {
-    fetchData();
+    
     // TODO: implement initState
     super.initState();
+    societyID = ModalRoute.of(context)!.settings.arguments as int?;
+    fetchData();
   }
 
   @override
   Widget build(BuildContext context) {
+         
+
     return Column(
       children: [
         Container(
@@ -77,7 +87,7 @@ class _ExploreCommunitiesState extends State<ExploreCommunities> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
-                    "Communities",
+                    "Events",
                     style: TextStyle(color: Colors.white, fontSize: 17),
                   ),
                 ],
@@ -88,15 +98,15 @@ class _ExploreCommunitiesState extends State<ExploreCommunities> {
           height: MediaQuery.of(context).size.height * 0.82,
           child: isload
               ? const Center(child: CircularProgressIndicator())
-              : societies.length > 0
+              : events.length > 0
                   ? SingleChildScrollView(
                       child: Padding(
                       padding: const EdgeInsets.fromLTRB(10, 20, 10, 0),
                       child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            for (int i = 0; i < societies.length; i++)
-                              Cards(context, societies[i]),
+                            for (int i = 0; i < events.length; i++)
+                              Cards(context, events[i]),
                           ]),
                     ))
                   : Center(
@@ -107,7 +117,7 @@ class _ExploreCommunitiesState extends State<ExploreCommunities> {
     );
   }
 
-  Widget Cards(var context, Society society) {
+  Widget Cards(var context, Event event) {
     return GestureDetector(
       child: Padding(
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
@@ -124,7 +134,7 @@ class _ExploreCommunitiesState extends State<ExploreCommunities> {
                   ),
                   clipBehavior: Clip.hardEdge,
                   child: Image.network(
-                    "http://eventsphere.somee.com/SocietyDetailsImages/${society.ImageURL}",
+                    "http://eventsphere.somee.com/SocietyDetailsImages/${event.EventIcon}",
                     fit: BoxFit.fill,
                   ),
                 ),
@@ -134,7 +144,7 @@ class _ExploreCommunitiesState extends State<ExploreCommunities> {
                   child: Column(
                     children: [
                       Text(
-                        society.SocietyName,
+                        event.EventName,
                         style: const TextStyle(fontSize: 17),
                       )
                     ],
@@ -149,12 +159,10 @@ class _ExploreCommunitiesState extends State<ExploreCommunities> {
             ),
           )),
       onTap: () {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => SocietyDetail(
-                      id: society.ID,
-                    )));
+        // MaterialPageRoute(
+        //     builder: (context) => EventDetail(
+        //           event: event,
+        //         ));
       },
     );
   }

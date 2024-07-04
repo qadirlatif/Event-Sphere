@@ -32,11 +32,11 @@ class _BottomBarState extends State<BottomBar> {
               });
             }, icon: index == 1?const Icon(Icons.explore,size: 30, color: Color.fromRGBO(194, 155, 110, 1),) :const Icon(Icons.explore,size: 30, color: Colors.grey,)),
            
-            IconButton(onPressed: (){
-              setState(() {
-                index = 2;
-              });
-            }, icon: index == 2?const  Icon(Icons.info,size: 30, color: Color.fromRGBO(194, 155, 110, 1),) :const  Icon(Icons.info,size: 30, color: Colors.grey,))
+            // IconButton(onPressed: (){
+            //   setState(() {
+            //     index = 2;
+            //   });
+            // }, icon: index == 2?const  Icon(Icons.info,size: 30, color: Color.fromRGBO(194, 155, 110, 1),) :const  Icon(Icons.info,size: 30, color: Colors.grey,))
           ],
         )
           

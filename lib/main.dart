@@ -1,7 +1,11 @@
 import 'dart:ui';
 
 import 'package:eventsphere/BottomBar.dart';
+import 'package:eventsphere/Choice.dart';
 import 'package:eventsphere/EventDetail.dart';
+import 'package:eventsphere/EventList.dart';
+import 'package:eventsphere/Login.dart';
+import 'package:eventsphere/addEvent.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -16,10 +20,14 @@ class MainApp extends StatelessWidget {
     return  MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        body: BottomBar()
+        body: Choice()
       ),
       routes: {
-        '/EventDetail' :(context) => const EventDetail()
+
+        '/BottomBar' :(context) => const BottomBar(),
+        '/login' :(context) => const Login(),
+        '/EventDetail' :(context) => EventDetail(),
+        '/Eventlist' :  (context) => const ExploreEvents()
       },
     );
   }

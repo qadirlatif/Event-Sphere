@@ -1,7 +1,86 @@
+import 'package:eventsphere/EventDetail.dart';
+import 'package:eventsphere/SocietyDetail.dart';
+import 'package:eventsphere/model.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class Home extends StatelessWidget {
+class Home extends StatefulWidget {
   const Home({super.key});
+
+  @override
+  State<Home> createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  List<Society> societies = [];
+  List<Event> events = [];
+  bool isload = true;
+  Future<void> fetchDataofSocieties() async {
+    final response = await http
+        .get(Uri.parse('http://EventSphere.somee.com/Society/TopSocieties'));
+    if (response.statusCode == 200) {
+      var values = json.decode(response.body);
+      for (int i = 0; i < values.length; i++) {
+        Society society = Society();
+        society.ID = values[i]["ID"] ?? "";
+        society.SocietyName = values[i]["SocietyName"] ?? "";
+        society.ImageURL = values[i]["SocietyIcon"] ?? "";
+        societies.add(society);
+      }
+      // userid = values["userid"];
+
+      setState(() {
+        isload = false;
+      });
+    } else {}
+  }
+
+  Future<void> fetchDataofEvents() async {
+    final response = await http
+        .get(Uri.parse('http://EventSphere.somee.com/Society/TopEvents'));
+    if (response.statusCode == 200) {
+      var values = json.decode(response.body);
+      for (int i = 0; i < values.length; i++) {
+        Event event = Event();
+        event.ID = values[i]["ID"] ?? 0;
+        event.EventName = values[i]["EventName"] ?? "";
+        String rawDate = values[i]["EventDateandTime"] ?? "";
+        try {
+          // Extract the number from the /Date(1721840400000)/ format
+          final timestamp =
+              int.parse(rawDate.replaceAll(RegExp(r'[^0-9]'), ''));
+          // Convert the timestamp to a DateTime object in UTC
+          DateTime utcDate =
+              DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
+          // Convert the UTC time to local time
+          event.EventDateandTime = utcDate.toLocal();
+        } catch (e) {
+          print("Error parsing date: $e");
+        }
+
+        event.EventVenue = values[i]["EventVenue"] ?? "";
+        event.EventCity = values[i]["EventCity"] ?? "";
+        event.SocietyID = values[i]["SocietyID"] ?? 0;
+        event.EventIcon = values[i]["EventIcon"] ?? "";
+
+        events.add(event);
+      }
+      // userid = values["userid"];
+
+      setState(() {
+        isload = false;
+      });
+    } else {}
+  }
+
+  @override
+  void initState() {
+    fetchDataofEvents();
+    fetchDataofSocieties();
+    // TODO: implement initState
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,26 +133,30 @@ class Home extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const Padding(padding: EdgeInsets.all(10)),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        child: card(context, "first event", "robotics society",
-                            false, "10/12/2024 5:00 PM"),
-                        onTap: () {
-                          Navigator.pushNamed(context, "/EventDetail");
-                        },
+                isload
+                    ? Center(
+                        child: CircularProgressIndicator(),
+                      )
+                    : SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            for (int i = 0; i < events.length; i++)
+                              GestureDetector(
+                                child: card(
+                                    context,
+                                    events[i].EventIcon,
+                                    events[i].EventName,
+                                    "",
+                                    false,
+                                    events[i].EventDateandTime.toString()),
+                                onTap: () {
+                                  Navigator.pushNamed(context, '/EventDetail', arguments: events[i]);
+                                },
+                              )
+                          ],
+                        ),
                       ),
-                      card(context, "second event", "gaming society", false,
-                          "10/5/2024 5:00 PM"),
-                      card(context, "thhird event", "media society", false,
-                          "10/2/2024 5:00 PM"),
-                      card(context, "fourth event", "cricket society", false,
-                          "10/7/2024 5:00 PM"),
-                    ],
-                  ),
-                ),
                 const Padding(padding: EdgeInsets.all(10)),
                 const Text(
                   "Top Societies",
@@ -84,14 +167,19 @@ class Home extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      card(context, "first event", "robotics society", true,
-                          "10/12/2024 5:00 PM"),
-                      card(context, "second event", "gaming society", true,
-                          "10/5/2024 5:00 PM"),
-                      card(context, "thhird event", "media society", true,
-                          "10/2/2024 5:00 PM"),
-                      card(context, "fourth event", "cricket society", false,
-                          "10/7/2024 5:00 PM"),
+                      for (int i = 0; i < societies.length; i++)
+                        GestureDetector(
+                          child: card(context, societies[i].ImageURL, "",
+                              societies[i].SocietyName, true, ""),
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => SocietyDetail(
+                                          id: societies[i].ID,
+                                        )));
+                          },
+                        )
                     ],
                   ),
                 ),
@@ -103,8 +191,8 @@ class Home extends StatelessWidget {
     );
   }
 
-  Widget card(var context, String eventname, String societyname, bool isSociety,
-      String time) {
+  Widget card(var context, String ImageURL, String eventname,
+      String societyname, bool isSociety, String time) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 0, 15, 0),
       child: Container(
@@ -134,20 +222,27 @@ class Home extends StatelessWidget {
                 topLeft: Radius.circular(10),
                 topRight: Radius.circular(10),
               )),
-              child: Image.network(
-                "https://cdn.britannica.com/85/128585-050-5A1BDD02/Karachi-Pakistan.jpg",
-                fit: BoxFit.fill,
-              ),
+              child: isSociety
+                  ? Image.network(
+                      "http://eventsphere.somee.com/SocietyDetailsImages/${ImageURL}",
+                      fit: BoxFit.fill,
+                    )
+                  : Image.network(
+                      "http://eventsphere.somee.com/EventIcon/${ImageURL}",
+                      fit: BoxFit.fill,
+                    ),
             ),
             Padding(
                 padding: const EdgeInsets.fromLTRB(5, 10, 0, 0),
                 child: Text(eventname)),
-            Padding(
-                padding: const EdgeInsets.fromLTRB(5, 10, 0, 0),
-                child: Text(
-                  societyname,
-                  style: const TextStyle(fontSize: 12),
-                )),
+            isSociety
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(5, 10, 0, 0),
+                    child: Text(
+                      societyname,
+                      style: const TextStyle(fontSize: 12),
+                    ))
+                : Padding(padding: EdgeInsets.all(0)),
             isSociety == false
                 ? Padding(
                     padding: const EdgeInsets.fromLTRB(5, 10, 0, 0),
@@ -158,7 +253,7 @@ class Home extends StatelessWidget {
                           size: 20,
                         ),
                         Text(
-                          time,
+                          time.substring(0, 20),
                           style: const TextStyle(fontSize: 12),
                         )
                       ],

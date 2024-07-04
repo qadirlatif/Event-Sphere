@@ -1,10 +1,18 @@
+import 'package:eventsphere/model.dart';
 import 'package:flutter/material.dart';
 
-class EventDetail extends StatelessWidget {
-  const EventDetail({super.key});
+class EventDetail extends StatefulWidget {
+  EventDetail({super.key});
+      
 
   @override
+  State<EventDetail> createState() => _EventDetailState();
+}
+
+class _EventDetailState extends State<EventDetail> {
+  @override
   Widget build(BuildContext context) {
+    final Event event = ModalRoute.of(context)!.settings.arguments as Event;
     return Scaffold(
       body: SizedBox(
         width: MediaQuery.of(context).size.width * 1,
@@ -24,7 +32,7 @@ class EventDetail extends StatelessWidget {
                       width: MediaQuery.of(context).size.width * 1,
                       height: MediaQuery.of(context).size.height * 0.65,
                       child: Image.network(
-                        "https://cdn.britannica.com/85/128585-050-5A1BDD02/Karachi-Pakistan.jpg",
+                        "http://eventsphere.somee.com/EventIcon/${event.EventIcon}",
                         fit: BoxFit.cover,
                       ),
                     )),
@@ -86,7 +94,7 @@ class EventDetail extends StatelessWidget {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        "Event Name",
+                                        event.EventName,
                                         style: TextStyle(
                                             color: Colors.white,
                                             fontSize: MediaQuery.of(context)
@@ -94,13 +102,13 @@ class EventDetail extends StatelessWidget {
                                                     .width *
                                                 0.08),
                                       ),
-                                      const Text(
-                                        "Took Place on 5/12/2024 5:00 PM",
+                                      Text(
+                                        "Took Place on ${event.EventDateandTime}",
                                         style: TextStyle(
                                             color: Colors.grey, fontSize: 15),
                                       ),
-                                      const Text(
-                                        "Karachi, Pakistan",
+                                      Text(
+                                        event.EventVenue + " , " +  event.EventCity,
                                         style: TextStyle(
                                             color: Colors.white, fontSize: 15),
                                       )
